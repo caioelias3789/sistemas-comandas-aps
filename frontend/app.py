@@ -15,13 +15,29 @@ if "tipo" not in st.session_state:
     st.session_state.tipo=None
 
 
+# ==========================
 # LOGIN
+# ==========================
 
 if not st.session_state.logado:
 
+    # esconde sidebar
+    st.markdown(
+        """
+        <style>
+        section[data-testid="stSidebar"]{
+            display:none;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.title("🔐 Login")
 
-    email=st.text_input("Email")
+    email=st.text_input(
+        "Email"
+    )
 
     senha=st.text_input(
         "Senha",
@@ -30,33 +46,41 @@ if not st.session_state.logado:
 
     if st.button("Entrar"):
 
-        resposta=requests.post(
+        try:
 
-            f"{API_URL}/login",
+            resposta=requests.post(
+                f"{API_URL}/login",
+                json={
+                    "email":email.strip(),
+                    "senha":senha
+                }
+            )
 
-            json={
+            if resposta.status_code==200:
 
-                "email":email,
-                "senha":senha
-            }
-        )
+                dados=resposta.json()
 
-        if resposta.status_code==200:
+                st.session_state.logado=True
+                st.session_state.tipo=dados["tipo"]
 
-            dados=resposta.json()
+                st.rerun()
 
-            st.session_state.logado=True
+            else:
 
-            st.session_state.tipo=dados["tipo"]
+                st.error(
+                    "Login inválido"
+                )
 
-            st.rerun()
+        except Exception as e:
 
-        else:
+            st.error(
+                str(e)
+            )
 
-            st.error("Login inválido")
 
-
+# ==========================
 # SISTEMA
+# ==========================
 
 else:
 

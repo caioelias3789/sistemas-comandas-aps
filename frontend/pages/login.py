@@ -5,7 +5,9 @@ API_URL = "https://sistema-comanda.onrender.com"
 
 st.title("🔐 Login")
 
-email = st.text_input("Email")
+email = st.text_input(
+    "Email"
+)
 
 senha = st.text_input(
     "Senha",
@@ -15,7 +17,7 @@ senha = st.text_input(
 if st.button("Entrar"):
 
     dados = {
-        "email": email,
+        "email": email.strip(),
         "senha": senha
     }
 
@@ -30,18 +32,25 @@ if st.button("Entrar"):
 
             usuario = r.json()
 
+            # salva sessão
+            st.session_state.logado = True
+            st.session_state.tipo = usuario["tipo"]
+
             st.success(
                 f"Bem-vindo {usuario['nome']}"
             )
 
+            st.rerun()
+
         else:
 
-            st.error(
-                f"Erro {r.status_code}"
-            )
+            erro = r.json()
 
-            st.write(
-                r.json()
+            st.error(
+                erro.get(
+                    "detail",
+                    "Login inválido"
+                )
             )
 
     except Exception as e:
