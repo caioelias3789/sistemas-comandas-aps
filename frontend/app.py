@@ -21,7 +21,6 @@ if "tipo" not in st.session_state:
 
 if not st.session_state.logado:
 
-    # esconde sidebar
     st.markdown(
         """
         <style>
@@ -31,6 +30,13 @@ if not st.session_state.logado:
         </style>
         """,
         unsafe_allow_html=True
+    )
+
+    exec(
+        open(
+            "telas/login.py",
+            encoding="utf8"
+        ).read()
     )
 
     st.title("🔐 Login")

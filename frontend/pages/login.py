@@ -44,13 +44,12 @@ if st.button("Entrar"):
 
         else:
 
-            erro = r.json()
-
             st.error(
-                erro.get(
-                    "detail",
-                    "Login inválido"
-                )
+                f"Erro {r.status_code}"
+            )       
+
+            st.write(
+                r.text
             )
 
     except Exception as e:
