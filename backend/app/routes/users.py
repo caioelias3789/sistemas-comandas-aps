@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from app.database import get_db
 from app.models import Usuario
@@ -11,10 +11,13 @@ router = APIRouter(
     tags=["Usuários"]
 )
 
+# ==========================
+# SCHEMA
+# ==========================
 
 class UsuarioCreate(BaseModel):
     nome: str
-    email: str
+    email: EmailStr
     senha: str
     tipo: str
 
@@ -43,7 +46,6 @@ def criar_usuario(
         )
 
     novo = Usuario(
-
         nome=dados.nome,
         email=dados.email,
         senha=gerar_hash(
@@ -57,9 +59,9 @@ def criar_usuario(
     db.refresh(novo)
 
     return {
-
         "id": novo.id,
         "nome": novo.nome,
+        "email": novo.email,
         "tipo": novo.tipo
     }
 
@@ -77,23 +79,19 @@ def listar_usuarios(
         Usuario
     ).all()
 
-    resultado = []
-
-    for u in usuarios:
-
-        resultado.append({
-
+    return [
+        {
             "id": u.id,
             "nome": u.nome,
             "email": u.email,
             "tipo": u.tipo
-        })
-
-    return resultado
+        }
+        for u in usuarios
+    ]
 
 
 # ==========================
-# Buscar por ID
+# Buscar usuário
 # ==========================
 
 @router.get("/{id}")
@@ -116,7 +114,6 @@ def buscar_usuario(
         )
 
     return {
-
         "id": usuario.id,
         "nome": usuario.nome,
         "email": usuario.email,
@@ -151,6 +148,5 @@ def excluir_usuario(
     db.commit()
 
     return {
-
         "mensagem": "Usuário removido"
     }

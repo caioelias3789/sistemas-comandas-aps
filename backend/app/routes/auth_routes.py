@@ -6,9 +6,7 @@ from app.models import Usuario
 from app.auth import verificar
 from app.schemas import Login
 
-router = APIRouter(
-    tags=["Autenticação"]
-)
+router = APIRouter()
 
 @router.post("/login")
 def login(
@@ -29,12 +27,10 @@ def login(
             detail="Usuário inválido"
         )
 
-    senha_valida = verificar(
+    if not verificar(
         dados.senha,
         usuario.senha
-    )
-
-    if not senha_valida:
+    ):
 
         raise HTTPException(
             status_code=401,
@@ -42,6 +38,6 @@ def login(
         )
 
     return {
-        "nome": usuario.nome,
-        "tipo": usuario.tipo
+        "tipo": usuario.tipo,
+        "nome": usuario.nome
     }

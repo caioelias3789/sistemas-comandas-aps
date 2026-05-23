@@ -9,3 +9,9 @@ class ProdutoCreate(BaseModel):
 class Login(BaseModel):
     email:str
     senha:str
+
+class UsuarioCreate(BaseModel):
+    nome: str
+    email: str
+    senha: str
+    tipo: str
