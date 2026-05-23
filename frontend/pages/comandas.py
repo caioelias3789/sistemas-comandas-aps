@@ -1,57 +1,12 @@
 import streamlit as st
 import requests
+import pandas as pd
 
 API_URL="https://sistema-comanda.onrender.com"
 
-st.title("🍴 Comandas")
+st.title("🍽️ Comandas")
 
-tab1, tab2 = st.tabs([
-    "Nova Comanda",
-    "Gerenciar"
-])
-
-# ==========================
-# CRIAR COMANDA
-# ==========================
-
-with tab1:
-
-    mesa = st.number_input(
-        "Número da mesa",
-        min_value=1
-    )
-
-    if st.button(
-        "Criar Comanda"
-    ):
-
-        resposta = requests.post(
-            f"{API_URL}/comandas",
-            json={
-                "mesa": mesa
-            }
-        )
-
-        if resposta.status_code in [200, 201]:
-
-            st.success(
-                "Comanda criada"
-            )
-
-            st.rerun()
-
-        else:
-
-            st.error(
-                "Erro ao criar"
-            )
-
-
-# ==========================
-# GERENCIAR
-# ==========================
-
-with tab2:
+try:
 
     resposta = requests.get(
         f"{API_URL}/comandas"
@@ -69,122 +24,91 @@ with tab2:
 
         else:
 
-            produtos = requests.get(
-                f"{API_URL}/produtos"
-            ).json()
-
-            lista_produtos = {
-
-                p["nome"]: p["id"]
-                for p in produtos
-            }
+            tabela=[]
 
             for c in comandas:
 
-                # esconder finalizadas
-                if c.get(
-                    "status"
-                ) == "FINALIZADA":
+                tabela.append({
 
-                    continue
+                    "ID": c.get(
+                        "id",
+                        "-"
+                    ),
 
-                st.subheader(
-                    f"Comanda {c['id']}"
-                )
+                    "Mesa": c.get(
+                        "mesa",
+                        "-"
+                    ),
 
-                st.write(
-                    f"Mesa: {c.get('mesa')}"
-                )
+                    "Status": c.get(
+                        "status",
+                        "-"
+                    ),
 
-                st.write(
-                    f"Status: {c.get('status')}"
-                )
+                    "Total": c.get(
+                        "valor_total",
+                        0
+                    )
 
-                st.write(
-                    f"Total: R$ {c.get('total',0)}"
-                )
+                })
 
-                produto = st.selectbox(
-                    "Produto",
-                    lista_produtos.keys(),
-                    key=f"produto_{c['id']}"
-                )
+            df = pd.DataFrame(
+                tabela
+            )
 
-                quantidade = st.number_input(
-                    "Quantidade",
-                    min_value=1,
-                    key=f"qtd_{c['id']}"
-                )
+            st.dataframe(
+                df,
+                use_container_width=True
+            )
 
-                col1, col2, col3, col4 = st.columns(4)
+    else:
 
-                with col1:
+        st.error(
+            f"Erro API: {resposta.status_code}"
+        )
 
-                    if st.button(
-                        "Adicionar item",
-                        key=f"add_{c['id']}"
-                    ):
+except Exception as e:
 
-                        requests.post(
-                            f"{API_URL}/comandas/{c['id']}/itens",
-                            json={
-                                "produto_id":
-                                lista_produtos[
-                                    produto
-                                ],
+    st.error(
+        f"Erro: {str(e)}"
+    )
 
-                                "quantidade":
-                                quantidade
-                            }
-                        )
 
-                        st.rerun()
+st.divider()
 
-                with col2:
+st.subheader(
+    "Nova comanda"
+)
 
-                    if st.button(
-                        "Enviar cozinha",
-                        key=f"cozinha_{c['id']}"
-                    ):
+mesa=st.number_input(
+    "Mesa",
+    min_value=1
+)
 
-                        requests.put(
-                            f"{API_URL}/comandas/{c['id']}",
-                            json={
-                                "status":
-                                "NA_COZINHA"
-                            }
-                        )
+if st.button(
+    "Criar"
+):
 
-                        st.rerun()
+    try:
 
-                with col3:
+        requests.post(
 
-                    if st.button(
-                        "Fechar",
-                        key=f"fechar_{c['id']}"
-                    ):
+            f"{API_URL}/comandas",
 
-                        requests.put(
-                            f"{API_URL}/comandas/{c['id']}/fechar"
-                        )
+            json={
 
-                        st.rerun()
+                "mesa":mesa
+            }
+        )
 
-                with col4:
+        st.success(
+            "Comanda criada"
+        )
 
-                    if st.button(
-                        "Excluir",
-                        key=f"delete_{c['id']}"
-                    ):
+        st.rerun()
 
-                        requests.delete(
-                            f"{API_URL}/comandas/{c['id']}"
-                        )
+    except Exception as e:
 
-                        st.success(
-                            "Comanda excluída"
-                        )
-
-                        st.rerun()
-
-                st.divider()
+        st.error(
+            str(e)
+        )
