@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from streamlit_extras.metric_cards import style_metric_cards
 
-API_URL="https://sistema-comanda.onrender.com"
+API_URL="http://localhost:8000"
 
 st.title("📊 Dashboard")
 

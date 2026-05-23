@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL="https://sistema-comanda.onrender.com"
+API_URL="http://localhost:8000"
 
 st.set_page_config(
     page_title="Sistema de Comandas",
@@ -15,35 +15,13 @@ if "tipo" not in st.session_state:
     st.session_state.tipo=None
 
 
-# ==========================
 # LOGIN
-# ==========================
 
 if not st.session_state.logado:
 
-    st.markdown(
-        """
-        <style>
-        section[data-testid="stSidebar"]{
-            display:none;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    exec(
-        open(
-            "telas/login.py",
-            encoding="utf8"
-        ).read()
-    )
-
     st.title("🔐 Login")
 
-    email=st.text_input(
-        "Email"
-    )
+    email=st.text_input("Email")
 
     senha=st.text_input(
         "Senha",
@@ -52,41 +30,33 @@ if not st.session_state.logado:
 
     if st.button("Entrar"):
 
-        try:
+        resposta=requests.post(
 
-            resposta=requests.post(
-                f"{API_URL}/login",
-                json={
-                    "email":email.strip(),
-                    "senha":senha
-                }
-            )
+            f"{API_URL}/login",
 
-            if resposta.status_code==200:
+            json={
 
-                dados=resposta.json()
+                "email":email,
+                "senha":senha
+            }
+        )
 
-                st.session_state.logado=True
-                st.session_state.tipo=dados["tipo"]
+        if resposta.status_code==200:
 
-                st.rerun()
+            dados=resposta.json()
 
-            else:
+            st.session_state.logado=True
 
-                st.error(
-                    "Login inválido"
-                )
+            st.session_state.tipo=dados["tipo"]
 
-        except Exception as e:
+            st.rerun()
 
-            st.error(
-                str(e)
-            )
+        else:
+
+            st.error("Login inválido")
 
 
-# ==========================
 # SISTEMA
-# ==========================
 
 else:
 

@@ -1,23 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter,Depends,HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Usuario
 from app.auth import verificar
-from app.schemas import Login
 
-router = APIRouter()
+router=APIRouter()
 
 @router.post("/login")
 def login(
-    dados: Login,
-    db: Session = Depends(get_db)
+    dados:dict,
+    db:Session=Depends(get_db)
 ):
 
-    usuario = db.query(
+    usuario=db.query(
         Usuario
     ).filter(
-        Usuario.email == dados.email
+        Usuario.email==dados["email"]
     ).first()
 
     if not usuario:
@@ -28,7 +27,7 @@ def login(
         )
 
     if not verificar(
-        dados.senha,
+        dados["senha"],
         usuario.senha
     ):
 
@@ -37,7 +36,8 @@ def login(
             detail="Senha inválida"
         )
 
-    return {
-        "tipo": usuario.tipo,
-        "nome": usuario.nome
+    return{
+
+        "tipo":usuario.tipo,
+        "nome":usuario.nome
     }
