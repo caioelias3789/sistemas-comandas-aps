@@ -5,14 +5,12 @@ API_URL = "https://sistema-comanda.onrender.com"
 
 st.title("🔐 Login")
 
-email = st.text_input(
-    "Email"
-).strip()
+email = st.text_input("Email")
 
 senha = st.text_input(
     "Senha",
     type="password"
-).strip()
+)
 
 if st.button("Entrar"):
 
@@ -36,17 +34,18 @@ if st.button("Entrar"):
                 f"Bem-vindo {usuario['nome']}"
             )
 
-            st.session_state["logado"] = True
-            st.session_state["usuario"] = usuario
-
         else:
 
             st.error(
-                f"Erro: {r.text}"
+                f"Erro {r.status_code}"
+            )
+
+            st.write(
+                r.json()
             )
 
     except Exception as e:
 
         st.error(
-            f"Falha conexão: {str(e)}"
+            f"Erro conexão: {str(e)}"
         )
