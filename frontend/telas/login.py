@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL="http://localhost:8000"
+API_URL="https://sistema-comanda.onrender.com"
 
 email=st.text_input("Email")
 senha=st.text_input(
