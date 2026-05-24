@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Produto
+from app.models import Produto, ItemComanda
 from app.permissoes import somente_admin
 
 router = APIRouter(
@@ -10,6 +10,10 @@ router = APIRouter(
     tags=["Produtos"]
 )
 
+
+# ==========================
+# CRIAR PRODUTO
+# ==========================
 
 @router.post("")
 def criar_produto(
@@ -37,15 +41,25 @@ def criar_produto(
     }
 
 
+# ==========================
+# LISTAR PRODUTOS
+# ==========================
+
 @router.get("")
 def listar_produtos(
     db: Session = Depends(get_db)
 ):
 
-    return db.query(
+    produtos = db.query(
         Produto
     ).all()
 
+    return produtos
+
+
+# ==========================
+# EXCLUIR PRODUTO
+# ==========================
 
 @router.delete("/{id}")
 def excluir_produto(
@@ -67,10 +81,27 @@ def excluir_produto(
             detail="Produto não encontrado"
         )
 
+
+    # verifica se produto está sendo usado em alguma comanda
+    item = db.query(
+        ItemComanda
+    ).filter(
+        ItemComanda.produto_id == id
+    ).first()
+
+
+    if item:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Não é possível excluir produto que já foi utilizado em comandas"
+        )
+
+
     db.delete(produto)
 
     db.commit()
 
     return {
-        "mensagem": "Produto removido"
+        "mensagem": "Produto removido com sucesso"
     }
