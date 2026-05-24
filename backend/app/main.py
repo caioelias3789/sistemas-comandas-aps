@@ -8,7 +8,6 @@ from app.routes import auth_routes
 from app.routes import users
 from app.routes import comandas
 from app.routes import itens
-from app.routes import usuarios
 
 Base.metadata.create_all(bind=engine)
 
