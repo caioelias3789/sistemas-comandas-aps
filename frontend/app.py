@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-API_URL = "https://sistema-comanda.onrender.com"
+API_URL = "https://sistemas-comandas-aps.onrender.com"
 
 st.set_page_config(
     page_title="Sistema de Comandas",
