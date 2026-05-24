@@ -9,6 +9,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ======================
+# SESSION
+# ======================
+
 if "logado" not in st.session_state:
     st.session_state.logado = False
 
@@ -16,9 +20,12 @@ if "tipo" not in st.session_state:
     st.session_state.tipo = None
 
 
-# ESCONDER SIDEBAR NA TELA DE LOGIN
+# ======================
+# ESCONDER SIDEBAR
+# ======================
 
 if not st.session_state.logado:
+
     st.markdown("""
     <style>
         section[data-testid="stSidebar"]{
@@ -28,13 +35,17 @@ if not st.session_state.logado:
     """, unsafe_allow_html=True)
 
 
+# ======================
 # LOGIN
+# ======================
 
 if not st.session_state.logado:
 
     st.title("🔐 Login")
 
-    email = st.text_input("Email")
+    email = st.text_input(
+        "Email"
+    )
 
     senha = st.text_input(
         "Senha",
@@ -54,6 +65,28 @@ if not st.session_state.logado:
                 timeout=10
             )
 
+            # DEBUG
+            st.write(
+                "Status:",
+                resposta.status_code
+            )
+
+            try:
+
+                st.write(
+                    "Resposta:",
+                    resposta.json()
+                )
+
+            except:
+
+                st.write(
+                    "Resposta:",
+                    resposta.text
+                )
+
+            # LOGIN OK
+
             if resposta.status_code == 200:
 
                 dados = resposta.json()
@@ -65,12 +98,14 @@ if not st.session_state.logado:
 
             else:
 
-                st.error("Login inválido")
+                st.error(
+                    "Falha no login"
+                )
 
         except requests.exceptions.ConnectionError:
 
             st.error(
-                "Não foi possível conectar ao servidor"
+                "Não foi possível conectar ao backend"
             )
 
         except requests.exceptions.Timeout:
@@ -86,7 +121,9 @@ if not st.session_state.logado:
             )
 
 
+# ======================
 # SISTEMA
+# ======================
 
 else:
 
@@ -131,30 +168,40 @@ else:
 
         st.rerun()
 
+    # CARREGAR TELAS
+
     if pagina == "Dashboard":
 
-        exec(open(
-            "telas/dashboard.py",
-            encoding="utf8"
-        ).read())
+        exec(
+            open(
+                "telas/dashboard.py",
+                encoding="utf8"
+            ).read()
+        )
 
     elif pagina == "Produtos":
 
-        exec(open(
-            "telas/produtos.py",
-            encoding="utf8"
-        ).read())
+        exec(
+            open(
+                "telas/produtos.py",
+                encoding="utf8"
+            ).read()
+        )
 
     elif pagina == "Comandas":
 
-        exec(open(
-            "telas/comandas.py",
-            encoding="utf8"
-        ).read())
+        exec(
+            open(
+                "telas/comandas.py",
+                encoding="utf8"
+            ).read()
+        )
 
     elif pagina == "Relatórios":
 
-        exec(open(
-            "telas/relatorios.py",
-            encoding="utf8"
-        ).read())
+        exec(
+            open(
+                "telas/relatorios.py",
+                encoding="utf8"
+            ).read()
+        )
