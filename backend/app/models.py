@@ -108,7 +108,8 @@ class Comanda(Base):
 
     itens = relationship(
         "ItemComanda",
-        back_populates="comanda"
+        back_populates="comanda",
+        cascade="all, delete"
     )
 
 
@@ -144,28 +145,4 @@ class ItemComanda(Base):
     comanda = relationship(
         "Comanda",
         back_populates="itens"
-    )
-
-class Item(Base):
-
-    __tablename__="itens"
-
-    id=Column(
-        Integer,
-        primary_key=True,
-        index=True
-    )
-
-    comanda_id=Column(
-        Integer,
-        ForeignKey("comandas.id")
-    )
-
-    produto_id=Column(
-        Integer,
-        ForeignKey("produtos.id")
-    )
-
-    quantidade=Column(
-        Integer
     )
