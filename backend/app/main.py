@@ -7,6 +7,7 @@ from app.routes import relatorios
 from app.routes import auth_routes
 from app.routes import users
 from app.routes import comandas
+from app.routes import itens
 
 Base.metadata.create_all(bind=engine)
 
@@ -19,6 +20,7 @@ app.include_router(relatorios.router)
 app.include_router(auth_routes.router)
 app.include_router(users.router)
 app.include_router(comandas.router)
+app.include_router(itens.router)
 
 @app.get("/")
 def home():
