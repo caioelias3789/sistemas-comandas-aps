@@ -13,16 +13,16 @@ st.subheader(
     "Novo produto"
 )
 
-nome=st.text_input(
+nome = st.text_input(
     "Nome"
 )
 
-preco=st.number_input(
+preco = st.number_input(
     "Preço",
     min_value=0.0
 )
 
-estoque=st.number_input(
+estoque = st.number_input(
     "Estoque",
     min_value=0
 )
@@ -31,18 +31,15 @@ if st.button(
     "Salvar"
 ):
 
-    resposta=requests.post(
+    resposta = requests.post(
 
         f"{API_URL}/produtos",
 
         json={
 
-            "nome":nome,
-
-            "preco":preco,
-
-            "estoque":estoque,
-
+            "nome": nome,
+            "preco": preco,
+            "estoque": estoque,
             "unidade":"UN"
         }
     )
@@ -58,7 +55,7 @@ if st.button(
     else:
 
         st.error(
-            "Erro ao salvar"
+            f"Erro: {resposta.text}"
         )
 
 
@@ -74,13 +71,13 @@ st.subheader(
 
 try:
 
-    resposta=requests.get(
+    resposta = requests.get(
         f"{API_URL}/produtos"
     )
 
-    produtos=resposta.json()
+    produtos = resposta.json()
 
-    if not produtos:
+    if len(produtos)==0:
 
         st.info(
             "Nenhum produto cadastrado"
@@ -90,8 +87,8 @@ try:
 
         for p in produtos:
 
-            col1,col2=st.columns(
-                [5,1]
+            col1,col2 = st.columns(
+                [8,1]
             )
 
             with col1:
@@ -99,7 +96,7 @@ try:
                 st.write(
 
                     f"🍔 {p['nome']} | "
-                    f"R$ {p['preco']} | "
+                    f"R$ {p['preco']:.2f} | "
                     f"Estoque: {p['estoque']}"
                 )
 
@@ -110,15 +107,23 @@ try:
                     key=f"delete_{p['id']}"
                 ):
 
-                    requests.delete(
+                    resposta = requests.delete(
                         f"{API_URL}/produtos/{p['id']}"
                     )
 
-                    st.success(
-                        "Produto removido"
-                    )
+                    if resposta.status_code == 200:
 
-                    st.rerun()
+                        st.success(
+                            "Produto removido"
+                        )
+
+                        st.rerun()
+
+                    else:
+
+                        st.error(
+                            f"Erro: {resposta.text}"
+                        )
 
 except Exception as e:
 

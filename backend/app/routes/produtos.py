@@ -1,23 +1,24 @@
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Produto
 from app.permissoes import somente_admin
 
-router=APIRouter(
+router = APIRouter(
     prefix="/produtos",
     tags=["Produtos"]
 )
 
+
 @router.post("")
 def criar_produto(
-    produto:dict,
-    db:Session=Depends(get_db),
+    produto: dict,
+    db: Session = Depends(get_db),
     usuario=Depends(somente_admin)
 ):
 
-    novo=Produto(
+    novo = Produto(
         nome=produto["nome"],
         preco=produto["preco"],
         estoque=produto["estoque"],
@@ -25,16 +26,20 @@ def criar_produto(
     )
 
     db.add(novo)
+
     db.commit()
 
-    return{
-        "mensagem":"Produto criado"
+    db.refresh(novo)
+
+    return {
+        "mensagem": "Produto criado",
+        "id": novo.id
     }
 
 
 @router.get("")
 def listar_produtos(
-    db:Session=Depends(get_db)
+    db: Session = Depends(get_db)
 ):
 
     return db.query(
@@ -44,27 +49,28 @@ def listar_produtos(
 
 @router.delete("/{id}")
 def excluir_produto(
-    id:int,
-    db:Session=Depends(get_db),
+    id: int,
+    db: Session = Depends(get_db),
     usuario=Depends(somente_admin)
 ):
 
-    produto=db.query(
+    produto = db.query(
         Produto
     ).filter(
-        Produto.id==id
+        Produto.id == id
     ).first()
 
     if not produto:
 
-        return {
-            "erro":"Produto não encontrado"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Produto não encontrado"
+        )
 
     db.delete(produto)
 
     db.commit()
 
-    return{
-        "mensagem":"Produto removido"
+    return {
+        "mensagem": "Produto removido"
     }
