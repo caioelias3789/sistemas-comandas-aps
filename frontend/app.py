@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import os
 
 API_URL = "https://sistemas-comandas-aps.onrender.com"
 
@@ -18,6 +19,13 @@ if "logado" not in st.session_state:
 
 if "tipo" not in st.session_state:
     st.session_state.tipo = None
+
+
+# ======================
+# CAMINHO BASE
+# ======================
+
+BASE_DIR = os.path.dirname(__file__)
 
 
 # ======================
@@ -64,28 +72,6 @@ if not st.session_state.logado:
                 },
                 timeout=10
             )
-
-            # DEBUG
-            st.write(
-                "Status:",
-                resposta.status_code
-            )
-
-            try:
-
-                st.write(
-                    "Resposta:",
-                    resposta.json()
-                )
-
-            except:
-
-                st.write(
-                    "Resposta:",
-                    resposta.text
-                )
-
-            # LOGIN OK
 
             if resposta.status_code == 200:
 
@@ -168,13 +154,19 @@ else:
 
         st.rerun()
 
+    # ======================
     # CARREGAR TELAS
+    # ======================
 
     if pagina == "Dashboard":
 
         exec(
             open(
-                "telas/dashboard.py",
+                os.path.join(
+                    BASE_DIR,
+                    "telas",
+                    "dashboard.py"
+                ),
                 encoding="utf8"
             ).read()
         )
@@ -183,7 +175,11 @@ else:
 
         exec(
             open(
-                "telas/produtos.py",
+                os.path.join(
+                    BASE_DIR,
+                    "telas",
+                    "produtos.py"
+                ),
                 encoding="utf8"
             ).read()
         )
@@ -192,7 +188,11 @@ else:
 
         exec(
             open(
-                "telas/comandas.py",
+                os.path.join(
+                    BASE_DIR,
+                    "telas",
+                    "comandas.py"
+                ),
                 encoding="utf8"
             ).read()
         )
@@ -201,7 +201,11 @@ else:
 
         exec(
             open(
-                "telas/relatorios.py",
+                os.path.join(
+                    BASE_DIR,
+                    "telas",
+                    "relatorios.py"
+                ),
                 encoding="utf8"
             ).read()
         )
