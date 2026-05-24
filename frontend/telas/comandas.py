@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import pandas as pd
 
-API_URL="https://sistema-comanda.onrender.com"
+API_URL="https://sistemas-comandas-aps.onrender.com"
 
 st.title("🍽️ Comandas")
 
