@@ -2,79 +2,68 @@ import streamlit as st
 import requests
 import pandas as pd
 
-API_URL="https://sistemas-comandas-aps.onrender.com"
+API_URL = "https://sistemas-comandas-aps.onrender.com"
 
 st.title("🍽️ Comandas")
 
+# ==========================
+# CARREGAR COMANDAS
+# ==========================
+
 try:
 
-    resposta = requests.get(
-        f"{API_URL}/comandas"
+    r = requests.get(
+        f"{API_URL}/comandas",
+        timeout=10
     )
 
-    if resposta.status_code == 200:
+    comandas=[]
 
-        comandas = resposta.json()
+    if r.status_code==200:
+        comandas=r.json()
 
-        if not comandas:
+except:
 
-            st.info(
-                "Nenhuma comanda cadastrada"
-            )
+    comandas=[]
 
-        else:
 
-            tabela=[]
+# ==========================
+# LISTAR COMANDAS
+# ==========================
 
-            for c in comandas:
+if len(comandas)>0:
 
-                tabela.append({
+    tabela=[]
 
-                    "ID": c.get(
-                        "id",
-                        "-"
-                    ),
+    for c in comandas:
 
-                    "Mesa": c.get(
-                        "mesa",
-                        "-"
-                    ),
+        tabela.append({
 
-                    "Status": c.get(
-                        "status",
-                        "-"
-                    ),
+            "ID":c["id"],
+            "Mesa":c["mesa"],
+            "Status":c["status"],
+            "Total":c["total"]
 
-                    "Total": c.get(
-                        "valor_total",
-                        0
-                    )
+        })
 
-                })
+    st.dataframe(
+        pd.DataFrame(tabela),
+        use_container_width=True
+    )
 
-            df = pd.DataFrame(
-                tabela
-            )
+else:
 
-            st.dataframe(
-                df,
-                use_container_width=True
-            )
-
-    else:
-
-        st.error(
-            f"Erro API: {resposta.status_code}"
-        )
-
-except Exception as e:
-
-    st.error(
-        f"Erro: {str(e)}"
+    st.info(
+        "Nenhuma comanda cadastrada"
     )
 
 
 st.divider()
+
+
+# ==========================
+# NOVA COMANDA
+# ==========================
 
 st.subheader(
     "Nova comanda"
@@ -89,17 +78,14 @@ if st.button(
     "Criar"
 ):
 
-    try:
+    resposta=requests.post(
+        f"{API_URL}/comandas",
+        json={
+            "mesa":mesa
+        }
+    )
 
-        requests.post(
-
-            f"{API_URL}/comandas",
-
-            json={
-
-                "mesa":mesa
-            }
-        )
+    if resposta.status_code==200:
 
         st.success(
             "Comanda criada"
@@ -107,8 +93,111 @@ if st.button(
 
         st.rerun()
 
-    except Exception as e:
+    else:
 
         st.error(
-            str(e)
+            "Erro ao criar"
         )
+
+
+st.divider()
+
+
+# ==========================
+# ADICIONAR PRODUTOS
+# ==========================
+
+st.subheader(
+    "Adicionar produto na comanda"
+)
+
+try:
+
+    r=requests.get(
+        f"{API_URL}/produtos"
+    )
+
+    produtos=[]
+
+    if r.status_code==200:
+        produtos=r.json()
+
+except:
+
+    produtos=[]
+
+
+if len(comandas)>0 and len(produtos)>0:
+
+    lista_comandas={
+
+        f"Mesa {c['mesa']}":
+        c["id"]
+
+        for c in comandas
+
+    }
+
+    lista_produtos={
+
+        p["nome"]:
+        p["id"]
+
+        for p in produtos
+
+    }
+
+    comanda=st.selectbox(
+        "Escolha a comanda",
+        list(lista_comandas.keys())
+    )
+
+    produto=st.selectbox(
+        "Produto",
+        list(lista_produtos.keys())
+    )
+
+    quantidade=st.number_input(
+        "Quantidade",
+        min_value=1,
+        value=1
+    )
+
+    if st.button(
+        "Adicionar"
+    ):
+
+        resposta=requests.post(
+            f"{API_URL}/itens",
+            json={
+
+                "comanda_id":
+                lista_comandas[comanda],
+
+                "produto_id":
+                lista_produtos[produto],
+
+                "quantidade":
+                quantidade
+            }
+        )
+
+        if resposta.status_code==200:
+
+            st.success(
+                "Produto adicionado"
+            )
+
+            st.rerun()
+
+        else:
+
+            st.error(
+                f"Erro: {resposta.text}"
+            )
+
+else:
+
+    st.warning(
+        "Cadastre produtos e comandas primeiro"
+    )
