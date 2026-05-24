@@ -31,6 +31,10 @@ except:
 # LISTAR COMANDAS
 # ==========================
 
+st.subheader(
+    "Comandas"
+)
+
 if len(comandas)>0:
 
     tabela=[]
@@ -42,7 +46,7 @@ if len(comandas)>0:
             "ID":c["id"],
             "Mesa":c["mesa"],
             "Status":c["status"],
-            "Total":c["total"]
+            "Total":f'R$ {c["total"]:.2f}'
 
         })
 
@@ -51,14 +55,64 @@ if len(comandas)>0:
         use_container_width=True
     )
 
+    st.divider()
+
+    st.subheader(
+        "Gerenciar comandas"
+    )
+
+    for c in comandas:
+
+        with st.container():
+
+            st.write(
+                f"""
+Mesa: {c["mesa"]}
+
+Status: {c["status"]}
+
+Total: R$ {c["total"]:.2f}
+"""
+            )
+
+            if c["status"] != "FINALIZADA":
+
+                if st.button(
+                    f"Fechar mesa {c['mesa']}",
+                    key=f"fechar_{c['id']}"
+                ):
+
+                    resposta=requests.put(
+                        f"{API_URL}/comandas/{c['id']}/fechar"
+                    )
+
+                    if resposta.status_code==200:
+
+                        st.success(
+                            "Comanda fechada"
+                        )
+
+                        st.rerun()
+
+                    else:
+
+                        st.error(
+                            resposta.text
+                        )
+
+            else:
+
+                st.success(
+                    "✅ Comanda finalizada"
+                )
+
+            st.divider()
+
 else:
 
     st.info(
         "Nenhuma comanda cadastrada"
     )
-
-
-st.divider()
 
 
 # ==========================
@@ -136,6 +190,8 @@ if len(comandas)>0 and len(produtos)>0:
 
         for c in comandas
 
+        if c["status"]!="FINALIZADA"
+
     }
 
     lista_produtos={
@@ -147,54 +203,62 @@ if len(comandas)>0 and len(produtos)>0:
 
     }
 
-    comanda=st.selectbox(
-        "Escolha a comanda",
-        list(lista_comandas.keys())
-    )
+    if len(lista_comandas)>0:
 
-    produto=st.selectbox(
-        "Produto",
-        list(lista_produtos.keys())
-    )
-
-    quantidade=st.number_input(
-        "Quantidade",
-        min_value=1,
-        value=1
-    )
-
-    if st.button(
-        "Adicionar"
-    ):
-
-        resposta=requests.post(
-            f"{API_URL}/itens",
-            json={
-
-                "comanda_id":
-                lista_comandas[comanda],
-
-                "produto_id":
-                lista_produtos[produto],
-
-                "quantidade":
-                quantidade
-            }
+        comanda=st.selectbox(
+            "Escolha a comanda",
+            list(lista_comandas.keys())
         )
 
-        if resposta.status_code==200:
+        produto=st.selectbox(
+            "Produto",
+            list(lista_produtos.keys())
+        )
 
-            st.success(
-                "Produto adicionado"
+        quantidade=st.number_input(
+            "Quantidade",
+            min_value=1,
+            value=1
+        )
+
+        if st.button(
+            "Adicionar"
+        ):
+
+            resposta=requests.post(
+                f"{API_URL}/itens",
+                json={
+
+                    "comanda_id":
+                    lista_comandas[comanda],
+
+                    "produto_id":
+                    lista_produtos[produto],
+
+                    "quantidade":
+                    quantidade
+                }
             )
 
-            st.rerun()
+            if resposta.status_code==200:
 
-        else:
+                st.success(
+                    "Produto adicionado"
+                )
 
-            st.error(
-                f"Erro: {resposta.text}"
-            )
+                st.rerun()
+
+            else:
+
+                st.error(
+                    f"Erro: {resposta.text}"
+                )
+
+    else:
+
+        st.warning(
+            "Não existem comandas abertas"
+        )
 
 else:
 
