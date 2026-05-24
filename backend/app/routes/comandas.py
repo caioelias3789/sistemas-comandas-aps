@@ -6,19 +6,34 @@ API_URL = "https://sistemas-comandas-aps.onrender.com"
 st.title("🍽️ Comandas")
 
 # ==========================
+# BUSCAR COMANDAS
+# ==========================
+
+try:
+
+    r = requests.get(
+        f"{API_URL}/comandas",
+        timeout=10
+    )
+
+    if r.status_code == 200:
+
+        comandas = r.json()
+
+    else:
+
+        comandas = []
+
+except:
+
+    comandas = []
+
+
+# ==========================
 # LISTAR COMANDAS
 # ==========================
 
-r = requests.get(
-    f"{API_URL}/comandas"
-)
-
-comandas = []
-
-if r.status_code == 200:
-    comandas = r.json()
-
-if len(comandas) == 0:
+if not comandas:
 
     st.info(
         "Nenhuma comanda cadastrada"
@@ -26,21 +41,39 @@ if len(comandas) == 0:
 
 else:
 
+    st.subheader(
+        "Comandas abertas"
+    )
+
     for c in comandas:
 
-        st.container()
+        with st.container():
 
-        st.write(
-            f"""
-            Mesa: {c["mesa"]}
+            col1, col2, col3 = st.columns(3)
 
-            Status: {c["status"]}
+            with col1:
 
-            Total: R$ {c["total"]}
-            """
-        )
+                st.metric(
+                    "Mesa",
+                    c["mesa"]
+                )
 
-st.divider()
+            with col2:
+
+                st.metric(
+                    "Status",
+                    c["status"]
+                )
+
+            with col3:
+
+                st.metric(
+                    "Total",
+                    f'R$ {c["total"]:.2f}'
+                )
+
+            st.divider()
+
 
 # ==========================
 # NOVA COMANDA
@@ -52,63 +85,100 @@ st.subheader(
 
 mesa = st.number_input(
     "Mesa",
-    min_value=1
+    min_value=1,
+    value=1
 )
 
 if st.button(
-    "Criar"
+    "Criar comanda"
 ):
 
-    requests.post(
-        f"{API_URL}/comandas",
-        json={
-            "mesa": mesa
-        }
-    )
+    try:
 
-    st.rerun()
+        resposta = requests.post(
+            f"{API_URL}/comandas",
+            json={
+                "mesa": mesa
+            },
+            timeout=10
+        )
+
+        if resposta.status_code in [200,201]:
+
+            st.success(
+                "Comanda criada"
+            )
+
+            st.rerun()
+
+        else:
+
+            st.error(
+                f"Erro: {resposta.text}"
+            )
+
+    except Exception as e:
+
+        st.error(
+            str(e)
+        )
 
 
 st.divider()
 
+
 # ==========================
-# ADICIONAR ITEM
+# ADICIONAR PRODUTO
 # ==========================
 
 st.subheader(
-    "Adicionar item"
+    "Adicionar produto na comanda"
 )
 
-# busca produtos
-r_prod = requests.get(
-    f"{API_URL}/produtos"
-)
+try:
 
-produtos = []
+    r_prod = requests.get(
+        f"{API_URL}/produtos",
+        timeout=10
+    )
 
-if r_prod.status_code == 200:
     produtos = r_prod.json()
 
-if len(comandas) > 0 and len(produtos) > 0:
+except:
+
+    produtos=[]
+
+
+if comandas and produtos:
 
     lista_comandas = {
-        f"Mesa {c['mesa']}": c["id"]
+
+        f"Mesa {c['mesa']}":
+        c["id"]
+
         for c in comandas
     }
 
     lista_produtos = {
-        p["nome"]: p["id"]
+
+        p["nome"]:
+        p["id"]
+
         for p in produtos
     }
 
-    comanda_escolhida = st.selectbox(
+    comanda = st.selectbox(
         "Comanda",
-        list(lista_comandas.keys())
+        list(
+            lista_comandas.keys()
+        )
     )
 
     produto = st.selectbox(
         "Produto",
-        list(lista_produtos.keys())
+        list(
+            lista_produtos.keys()
+        )
     )
 
     quantidade = st.number_input(
@@ -121,29 +191,47 @@ if len(comandas) > 0 and len(produtos) > 0:
         "Adicionar produto"
     ):
 
-        requests.post(
-            f"{API_URL}/itens",
-            json={
-                "comanda_id":
-                lista_comandas[
-                    comanda_escolhida
-                ],
+        try:
 
-                "produto_id":
-                lista_produtos[
-                    produto
-                ],
+            resposta = requests.post(
+                f"{API_URL}/itens",
+                json={
 
-                "quantidade":
-                quantidade
-            }
-        )
+                    "comanda_id":
+                    lista_comandas[
+                        comanda
+                    ],
 
-        st.success(
-            "Produto adicionado"
-        )
+                    "produto_id":
+                    lista_produtos[
+                        produto
+                    ],
 
-        st.rerun()
+                    "quantidade":
+                    quantidade
+                },
+                timeout=10
+            )
+
+            if resposta.status_code in [200,201]:
+
+                st.success(
+                    "Produto adicionado"
+                )
+
+                st.rerun()
+
+            else:
+
+                st.error(
+                    resposta.text
+                )
+
+        except Exception as e:
+
+            st.error(
+                str(e)
+            )
 
 else:
 
