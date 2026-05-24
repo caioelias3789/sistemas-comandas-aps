@@ -3,23 +3,24 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import ItemComanda, Produto, Comanda
+from app.permissoes import admin_ou_garcom
 
 router = APIRouter(
     prefix="/itens",
     tags=["Itens"]
 )
 
-
 @router.post("")
 def adicionar_item(
-    dados: dict,
-    db: Session = Depends(get_db)
+    dados:dict,
+    db:Session=Depends(get_db),
+    usuario=Depends(admin_ou_garcom)
 ):
 
-    produto = db.query(
+    produto=db.query(
         Produto
     ).filter(
-        Produto.id == dados["produto_id"]
+        Produto.id==dados["produto_id"]
     ).first()
 
     if not produto:
@@ -29,10 +30,10 @@ def adicionar_item(
             detail="Produto não encontrado"
         )
 
-    comanda = db.query(
+    comanda=db.query(
         Comanda
     ).filter(
-        Comanda.id == dados["comanda_id"]
+        Comanda.id==dados["comanda_id"]
     ).first()
 
     if not comanda:
@@ -42,7 +43,7 @@ def adicionar_item(
             detail="Comanda não encontrada"
         )
 
-    item = ItemComanda(
+    item=ItemComanda(
         produto_id=dados["produto_id"],
         comanda_id=dados["comanda_id"],
         quantidade=dados["quantidade"]
@@ -54,16 +55,17 @@ def adicionar_item(
     )
 
     db.add(item)
+
     db.commit()
 
-    return {
-        "mensagem": "Item adicionado"
+    return{
+        "mensagem":"Item adicionado"
     }
 
 
 @router.get("")
 def listar_itens(
-    db: Session = Depends(get_db)
+    db:Session=Depends(get_db)
 ):
 
     return db.query(

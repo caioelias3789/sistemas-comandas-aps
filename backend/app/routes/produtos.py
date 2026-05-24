@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Produto
+from app.permissoes import somente_admin
 
 router=APIRouter(
     prefix="/produtos",
@@ -12,7 +13,8 @@ router=APIRouter(
 @router.post("")
 def criar_produto(
     produto:dict,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_db),
+    usuario=Depends(somente_admin)
 ):
 
     novo=Produto(
@@ -29,6 +31,7 @@ def criar_produto(
         "mensagem":"Produto criado"
     }
 
+
 @router.get("")
 def listar_produtos(
     db:Session=Depends(get_db)
@@ -38,10 +41,12 @@ def listar_produtos(
         Produto
     ).all()
 
+
 @router.delete("/{id}")
 def excluir_produto(
     id:int,
-    db:Session=Depends(get_db)
+    db:Session=Depends(get_db),
+    usuario=Depends(somente_admin)
 ):
 
     produto=db.query(
@@ -56,12 +61,10 @@ def excluir_produto(
             "erro":"Produto não encontrado"
         }
 
-    db.delete(
-        produto
-    )
+    db.delete(produto)
 
     db.commit()
 
-    return {
+    return{
         "mensagem":"Produto removido"
     }
