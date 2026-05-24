@@ -10,17 +10,19 @@ router = APIRouter(
     tags=["Itens"]
 )
 
+
 @router.post("")
 def adicionar_item(
-    dados:dict,
-    db:Session=Depends(get_db),
+    dados: dict,
+    db: Session = Depends(get_db),
     usuario=Depends(admin_ou_garcom)
 ):
 
-    produto=db.query(
+    # procura produto
+    produto = db.query(
         Produto
     ).filter(
-        Produto.id==dados["produto_id"]
+        Produto.id == dados["produto_id"]
     ).first()
 
     if not produto:
@@ -30,10 +32,12 @@ def adicionar_item(
             detail="Produto não encontrado"
         )
 
-    comanda=db.query(
+
+    # procura comanda
+    comanda = db.query(
         Comanda
     ).filter(
-        Comanda.id==dados["comanda_id"]
+        Comanda.id == dados["comanda_id"]
     ).first()
 
     if not comanda:
@@ -43,29 +47,64 @@ def adicionar_item(
             detail="Comanda não encontrada"
         )
 
-    item=ItemComanda(
+
+    # impede adicionar em comanda fechada
+    if comanda.status == "FINALIZADA":
+
+        raise HTTPException(
+            status_code=400,
+            detail="Comanda já fechada"
+        )
+
+
+    quantidade = dados["quantidade"]
+
+
+    # verifica estoque
+    if produto.estoque < quantidade:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Estoque insuficiente"
+        )
+
+
+    # baixa estoque
+    produto.estoque -= quantidade
+
+
+    # cria item
+    item = ItemComanda(
         produto_id=dados["produto_id"],
         comanda_id=dados["comanda_id"],
-        quantidade=dados["quantidade"]
+        quantidade=quantidade
     )
 
+
+    # atualiza total
     comanda.total += (
-        produto.preco *
-        dados["quantidade"]
+        produto.preco * quantidade
     )
+
 
     db.add(item)
 
     db.commit()
 
-    return{
-        "mensagem":"Item adicionado"
+    db.refresh(item)
+
+    return {
+
+        "mensagem": "Item adicionado",
+
+        "estoque_restante":
+        produto.estoque
     }
 
 
 @router.get("")
 def listar_itens(
-    db:Session=Depends(get_db)
+    db: Session = Depends(get_db)
 ):
 
     return db.query(
