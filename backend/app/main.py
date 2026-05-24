@@ -7,14 +7,12 @@ from app.routes import relatorios
 from app.routes import auth_routes
 from app.routes import users
 
-# cria tabelas
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Sistema Comandas"
 )
 
-# rotas
 app.include_router(produtos.router)
 app.include_router(relatorios.router)
 app.include_router(auth_routes.router)
@@ -23,6 +21,6 @@ app.include_router(users.router)
 @app.get("/")
 def home():
     return {
-        "status": "online",
-        "mensagem": "API Sistema de Comandas funcionando"
+        "status":"online",
+        "mensagem":"API Sistema de Comandas funcionando"
     }
