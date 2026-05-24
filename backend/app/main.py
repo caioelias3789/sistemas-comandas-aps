@@ -3,7 +3,6 @@ from app.database import engine
 from app.models import Base
 
 from app.routes import produtos
-from app.routes import comandas
 from app.routes import relatorios
 from app.routes import auth_routes
 from app.routes import users
@@ -17,7 +16,6 @@ app = FastAPI(
 
 # rotas
 app.include_router(produtos.router)
-app.include_router(comandas.router)
 app.include_router(relatorios.router)
 app.include_router(auth_routes.router)
 app.include_router(users.router)
