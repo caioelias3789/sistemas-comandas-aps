@@ -18,7 +18,6 @@ def adicionar_item(
     usuario=Depends(admin_ou_garcom)
 ):
 
-    # procura produto
     produto = db.query(
         Produto
     ).filter(
@@ -33,7 +32,6 @@ def adicionar_item(
         )
 
 
-    # procura comanda
     comanda = db.query(
         Comanda
     ).filter(
@@ -48,8 +46,7 @@ def adicionar_item(
         )
 
 
-    # impede adicionar em comanda fechada
-    if comanda.status == "FINALIZADA":
+    if comanda.status=="FINALIZADA":
 
         raise HTTPException(
             status_code=400,
@@ -57,11 +54,10 @@ def adicionar_item(
         )
 
 
-    quantidade = dados["quantidade"]
+    quantidade=dados["quantidade"]
 
 
-    # verifica estoque
-    if produto.estoque < quantidade:
+    if produto.estoque<quantidade:
 
         raise HTTPException(
             status_code=400,
@@ -69,21 +65,24 @@ def adicionar_item(
         )
 
 
-    # baixa estoque
-    produto.estoque -= quantidade
+    produto.estoque-=quantidade
 
 
-    # cria item
-    item = ItemComanda(
+    item=ItemComanda(
+
         produto_id=dados["produto_id"],
+
         comanda_id=dados["comanda_id"],
-        quantidade=quantidade
+
+        quantidade=quantidade,
+
+        preco_unitario=produto.preco
     )
 
 
-    # atualiza total
-    comanda.total += (
-        produto.preco * quantidade
+    comanda.total+=(
+        item.preco_unitario*
+        quantidade
     )
 
 
@@ -93,9 +92,12 @@ def adicionar_item(
 
     db.refresh(item)
 
-    return {
+    return{
 
-        "mensagem": "Item adicionado",
+        "mensagem":"Item adicionado",
+
+        "preco_vendido":
+        item.preco_unitario,
 
         "estoque_restante":
         produto.estoque
@@ -104,9 +106,31 @@ def adicionar_item(
 
 @router.get("")
 def listar_itens(
-    db: Session = Depends(get_db)
+    db:Session=Depends(get_db)
 ):
 
-    return db.query(
+    itens=db.query(
         ItemComanda
     ).all()
+
+    resultado=[]
+
+    for i in itens:
+
+        resultado.append({
+
+            "id":i.id,
+
+            "produto":i.produto.nome,
+
+            "quantidade":i.quantidade,
+
+            "preco_unitario":
+            i.preco_unitario,
+
+            "subtotal":
+            i.preco_unitario*
+            i.quantidade
+        })
+
+    return resultado
