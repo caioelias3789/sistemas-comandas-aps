@@ -105,3 +105,41 @@ def excluir_produto(
     return {
         "mensagem": "Produto removido com sucesso"
     }
+
+# ==========================
+# ALTERAR PRODUTO
+# ==========================
+
+@router.put("/{id}")
+def atualizar_produto(
+    id:int,
+    dados:dict,
+    db:Session=Depends(get_db),
+    usuario=Depends(somente_admin)
+):
+
+    produto = db.query(
+        Produto
+    ).filter(
+        Produto.id == id
+    ).first()
+
+    if not produto:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Produto não encontrado"
+        )
+
+    produto.nome = dados["nome"]
+    produto.preco = dados["preco"]
+    produto.estoque = dados["estoque"]
+    produto.unidade = dados["unidade"]
+
+    db.commit()
+
+    db.refresh(produto)
+
+    return {
+        "mensagem":"Produto atualizado"
+    }
