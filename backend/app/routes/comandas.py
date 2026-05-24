@@ -1,179 +1,190 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+import streamlit as st
+import requests
 
-from app.database import SessionLocal
-from app.models import Comanda
+API_URL="https://sistema-comanda.onrender.com"
 
-router = APIRouter()
+st.title("🍴 Comandas")
 
+tab1, tab2 = st.tabs([
+    "Nova Comanda",
+    "Gerenciar"
+])
 
-def get_db():
+# ==========================
+# CRIAR COMANDA
+# ==========================
 
-    db = SessionLocal()
+with tab1:
 
-    try:
-        yield db
-
-    finally:
-        db.close()
-
-
-@router.get("/comandas")
-def listar_comandas(
-    db: Session = Depends(get_db)
-):
-
-    return db.query(
-        Comanda
-    ).all()
-
-
-@router.post("/comandas")
-def criar_comanda(
-    dados: dict,
-    db: Session = Depends(get_db)
-):
-
-    nova = Comanda(
-
-        mesa=dados["mesa"],
-        status="ABERTA",
-        total=0
+    mesa = st.number_input(
+        "Número da mesa",
+        min_value=1
     )
 
-    db.add(nova)
+    if st.button(
+        "Criar Comanda"
+    ):
 
-    db.commit()
+        resposta = requests.post(
+            f"{API_URL}/comandas",
+            json={
+                "mesa": mesa
+            }
+        )
 
-    db.refresh(
-        nova
+        if resposta.status_code in [200, 201]:
+
+            st.success(
+                "Comanda criada"
+            )
+
+            st.rerun()
+
+        else:
+
+            st.error(
+                "Erro ao criar"
+            )
+
+
+# ==========================
+# GERENCIAR
+# ==========================
+
+with tab2:
+
+    resposta = requests.get(
+        f"{API_URL}/comandas"
     )
 
-    return nova
+    if resposta.status_code == 200:
 
+        comandas = resposta.json()
 
-@router.put("/comandas/{id}")
-def atualizar_comanda(
-    id: int,
-    dados: dict,
-    db: Session = Depends(get_db)
-):
+        if not comandas:
 
-    comanda = db.query(
-        Comanda
-    ).filter(
-        Comanda.id == id
-    ).first()
+            st.info(
+                "Nenhuma comanda cadastrada"
+            )
 
-    if not comanda:
+        else:
 
-        return {
-            "erro":
-            "Comanda não encontrada"
-        }
+            produtos = requests.get(
+                f"{API_URL}/produtos"
+            ).json()
 
-    comanda.status = dados["status"]
+            lista_produtos = {
 
-    db.commit()
+                p["nome"]: p["id"]
+                for p in produtos
+            }
 
-    db.refresh(
-        comanda
-    )
+            for c in comandas:
 
-    return comanda
+                # esconder finalizadas
+                if c.get(
+                    "status"
+                ) == "FINALIZADA":
 
+                    continue
 
-@router.put("/comandas/{id}/fechar")
-def fechar_comanda(
-    id:int,
-    db: Session = Depends(get_db)
-):
+                st.subheader(
+                    f"Comanda {c['id']}"
+                )
 
-    comanda = db.query(
-        Comanda
-    ).filter(
-        Comanda.id == id
-    ).first()
+                st.write(
+                    f"Mesa: {c.get('mesa')}"
+                )
 
-    if not comanda:
+                st.write(
+                    f"Status: {c.get('status')}"
+                )
 
-        return {
-            "erro":
-            "Comanda não encontrada"
-        }
+                st.write(
+                    f"Total: R$ {c.get('total',0)}"
+                )
 
-    comanda.status = "FINALIZADA"
+                produto = st.selectbox(
+                    "Produto",
+                    lista_produtos.keys(),
+                    key=f"produto_{c['id']}"
+                )
 
-    db.commit()
+                quantidade = st.number_input(
+                    "Quantidade",
+                    min_value=1,
+                    key=f"qtd_{c['id']}"
+                )
 
-    return {
+                col1, col2, col3, col4 = st.columns(4)
 
-        "mensagem":
-        "Comanda fechada"
-    }
+                with col1:
 
+                    if st.button(
+                        "Adicionar item",
+                        key=f"add_{c['id']}"
+                    ):
 
-# ROTA FALTANDO
-@router.post("/comandas/{id}/itens")
-def adicionar_item(
-    id:int,
-    dados:dict,
-    db:Session=Depends(get_db)
-):
+                        requests.post(
+                            f"{API_URL}/comandas/{c['id']}/itens",
+                            json={
+                                "produto_id":
+                                lista_produtos[
+                                    produto
+                                ],
 
-    comanda=db.query(
-        Comanda
-    ).filter(
-        Comanda.id==id
-    ).first()
+                                "quantidade":
+                                quantidade
+                            }
+                        )
 
-    if not comanda:
+                        st.rerun()
 
-        return {
-            "erro":"Comanda não encontrada"
-        }
+                with col2:
 
-    # temporário
-    quantidade=dados["quantidade"]
+                    if st.button(
+                        "Enviar cozinha",
+                        key=f"cozinha_{c['id']}"
+                    ):
 
-    comanda.total += quantidade*10
+                        requests.put(
+                            f"{API_URL}/comandas/{c['id']}",
+                            json={
+                                "status":
+                                "NA_COZINHA"
+                            }
+                        )
 
-    db.commit()
+                        st.rerun()
 
-    db.refresh(
-        comanda
-    )
+                with col3:
 
-    return {
+                    if st.button(
+                        "Fechar",
+                        key=f"fechar_{c['id']}"
+                    ):
 
-        "mensagem":"Item adicionado",
-        "novo_total":comanda.total
-    }
+                        requests.put(
+                            f"{API_URL}/comandas/{c['id']}/fechar"
+                        )
 
-@router.delete("/comandas/{id}")
-def excluir_comanda(
-    id:int,
-    db: Session = Depends(get_db)
-):
+                        st.rerun()
 
-    comanda = db.query(
-        Comanda
-    ).filter(
-        Comanda.id == id
-    ).first()
+                with col4:
 
-    if not comanda:
+                    if st.button(
+                        "Excluir",
+                        key=f"delete_{c['id']}"
+                    ):
 
-        return {
-            "erro":"Comanda não encontrada"
-        }
+                        requests.delete(
+                            f"{API_URL}/comandas/{c['id']}"
+                        )
 
-    db.delete(
-        comanda
-    )
+                        st.success(
+                            "Comanda excluída"
+                        )
 
-    db.commit()
+                        st.rerun()
 
-    return {
-        "mensagem":"Comanda excluída"
-    }
+                st.divider()

@@ -1,18 +1,31 @@
 import streamlit as st
 import requests
 
-API_URL="https://sistema-comanda.onrender.com"
+API_URL = "https://sistema-comanda.onrender.com"
 
 st.set_page_config(
     page_title="Sistema de Comandas",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 if "logado" not in st.session_state:
-    st.session_state.logado=False
+    st.session_state.logado = False
 
 if "tipo" not in st.session_state:
-    st.session_state.tipo=None
+    st.session_state.tipo = None
+
+
+# ESCONDER SIDEBAR NA TELA DE LOGIN
+
+if not st.session_state.logado:
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"]{
+            display:none;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 
 # LOGIN
@@ -21,39 +34,56 @@ if not st.session_state.logado:
 
     st.title("🔐 Login")
 
-    email=st.text_input("Email")
+    email = st.text_input("Email")
 
-    senha=st.text_input(
+    senha = st.text_input(
         "Senha",
         type="password"
     )
 
     if st.button("Entrar"):
 
-        resposta=requests.post(
+        try:
 
-            f"{API_URL}/login",
+            resposta = requests.post(
+                f"{API_URL}/login",
+                json={
+                    "email": email,
+                    "senha": senha
+                },
+                timeout=10
+            )
 
-            json={
+            if resposta.status_code == 200:
 
-                "email":email,
-                "senha":senha
-            }
-        )
+                dados = resposta.json()
 
-        if resposta.status_code==200:
+                st.session_state.logado = True
+                st.session_state.tipo = dados["tipo"]
 
-            dados=resposta.json()
+                st.rerun()
 
-            st.session_state.logado=True
+            else:
 
-            st.session_state.tipo=dados["tipo"]
+                st.error("Login inválido")
 
-            st.rerun()
+        except requests.exceptions.ConnectionError:
 
-        else:
+            st.error(
+                "Não foi possível conectar ao servidor"
+            )
 
-            st.error("Login inválido")
+        except requests.exceptions.Timeout:
+
+            st.error(
+                "Servidor demorou para responder"
+            )
+
+        except Exception as e:
+
+            st.error(
+                f"Erro: {str(e)}"
+            )
 
 
 # SISTEMA
@@ -64,67 +94,65 @@ else:
         "🍴 Sistema"
     )
 
-    menu=[]
+    menu = []
 
-    if st.session_state.tipo=="Admin":
+    if st.session_state.tipo == "Admin":
 
-        menu=[
+        menu = [
             "Dashboard",
             "Produtos",
             "Comandas",
             "Relatórios"
         ]
 
-    elif st.session_state.tipo=="Operador":
+    elif st.session_state.tipo == "Operador":
 
-        menu=[
+        menu = [
             "Dashboard",
             "Comandas"
         ]
 
-    elif st.session_state.tipo=="Sistema":
+    elif st.session_state.tipo == "Sistema":
 
-        menu=[
+        menu = [
             "Comandas",
             "Relatórios"
         ]
 
-    pagina=st.sidebar.radio(
+    pagina = st.sidebar.radio(
         "Menu",
         menu
     )
 
-    if st.sidebar.button(
-        "Sair"
-    ):
+    if st.sidebar.button("Sair"):
 
-        st.session_state.logado=False
-        st.session_state.tipo=None
+        st.session_state.logado = False
+        st.session_state.tipo = None
 
         st.rerun()
 
-    if pagina=="Dashboard":
+    if pagina == "Dashboard":
 
         exec(open(
             "telas/dashboard.py",
             encoding="utf8"
         ).read())
 
-    elif pagina=="Produtos":
+    elif pagina == "Produtos":
 
         exec(open(
             "telas/produtos.py",
             encoding="utf8"
         ).read())
 
-    elif pagina=="Comandas":
+    elif pagina == "Comandas":
 
         exec(open(
             "telas/comandas.py",
             encoding="utf8"
         ).read())
 
-    elif pagina=="Relatórios":
+    elif pagina == "Relatórios":
 
         exec(open(
             "telas/relatorios.py",
