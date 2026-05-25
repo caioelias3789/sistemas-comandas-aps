@@ -2,14 +2,14 @@ import streamlit as st
 import requests
 import pandas as pd
 
-API_URL = "https://sistemas-comandas-aps.onrender.com"
+API_URL="https://sistemas-comandas-aps.onrender.com"
 
-st.title("🍽️ Comandas")
-
-tipo_usuario = st.session_state.get(
+tipo_usuario=st.session_state.get(
     "tipo",
     ""
 )
+
+st.title("🍽️ Comandas")
 
 # ==========================
 # CARREGAR COMANDAS
@@ -17,7 +17,7 @@ tipo_usuario = st.session_state.get(
 
 try:
 
-    r = requests.get(
+    r=requests.get(
         f"{API_URL}/comandas",
         timeout=10
     )
@@ -25,25 +25,12 @@ try:
     comandas=[]
 
     if r.status_code==200:
+
         comandas=r.json()
 
 except:
 
     comandas=[]
-
-
-# ==========================
-# FILTRAR COMANDAS
-# ==========================
-
-if tipo_usuario!="admin":
-
-    comandas=[
-
-        c for c in comandas
-        if c["status"]!="FINALIZADA"
-
-    ]
 
 
 # ==========================
@@ -76,6 +63,10 @@ if len(comandas)>0:
 
     st.divider()
 
+    # ==========================
+    # GERENCIAR
+    # ==========================
+
     st.subheader(
         "Gerenciar comandas"
     )
@@ -94,36 +85,77 @@ Total: R$ {c["total"]:.2f}
 """
             )
 
-            if c["status"]!="FINALIZADA":
+            col1,col2=st.columns(
+                [4,1]
+            )
 
-                if st.button(
-                    f"Fechar mesa {c['mesa']}",
-                    key=f"fechar_{c['id']}"
-                ):
+            with col1:
 
-                    resposta=requests.put(
-                        f"{API_URL}/comandas/{c['id']}/fechar"
+                if c["status"]!="FINALIZADA":
+
+                    if st.button(
+                        f"Fechar mesa {c['mesa']}",
+                        key=f"fechar_{c['id']}"
+                    ):
+
+                        resposta=requests.put(
+                            f"{API_URL}/comandas/{c['id']}/fechar"
+                        )
+
+                        if resposta.status_code==200:
+
+                            st.success(
+                                "Comanda fechada"
+                            )
+
+                            st.rerun()
+
+                        else:
+
+                            st.error(
+                                resposta.text
+                            )
+
+                else:
+
+                    st.success(
+                        "✅ Comanda finalizada"
                     )
 
-                    if resposta.status_code==200:
+            with col2:
 
-                        st.success(
-                            "Comanda fechada"
+                if (
+
+                    tipo_usuario=="admin"
+
+                    and
+
+                    c["status"]=="FINALIZADA"
+
+                ):
+
+                    if st.button(
+                        "🗑️",
+                        key=f"delete_{c['id']}"
+                    ):
+
+                        resposta=requests.delete(
+                            f"{API_URL}/comandas/{c['id']}"
                         )
 
-                        st.rerun()
+                        if resposta.status_code==200:
 
-                    else:
+                            st.success(
+                                "Comanda removida"
+                            )
 
-                        st.error(
-                            resposta.text
-                        )
+                            st.rerun()
 
-            else:
+                        else:
 
-                st.success(
-                    "✅ Comanda finalizada"
-                )
+                            st.error(
+                                resposta.text
+                            )
 
             st.divider()
 
@@ -152,8 +184,11 @@ if st.button(
 ):
 
     resposta=requests.post(
+
         f"{API_URL}/comandas",
+
         json={
+
             "mesa":mesa
         }
     )
@@ -177,7 +212,7 @@ st.divider()
 
 
 # ==========================
-# ADICIONAR PRODUTOS
+# ADICIONAR PRODUTO
 # ==========================
 
 st.subheader(
@@ -193,6 +228,7 @@ try:
     produtos=[]
 
     if r.status_code==200:
+
         produtos=r.json()
 
 except:
@@ -210,7 +246,6 @@ if len(comandas)>0 and len(produtos)>0:
         for c in comandas
 
         if c["status"]!="FINALIZADA"
-
     }
 
     lista_produtos={
@@ -219,19 +254,22 @@ if len(comandas)>0 and len(produtos)>0:
         p["id"]
 
         for p in produtos
-
     }
 
     if len(lista_comandas)>0:
 
         comanda=st.selectbox(
             "Escolha a comanda",
-            list(lista_comandas.keys())
+            list(
+                lista_comandas.keys()
+            )
         )
 
         produto=st.selectbox(
             "Produto",
-            list(lista_produtos.keys())
+            list(
+                lista_produtos.keys()
+            )
         )
 
         quantidade=st.number_input(
@@ -245,14 +283,20 @@ if len(comandas)>0 and len(produtos)>0:
         ):
 
             resposta=requests.post(
+
                 f"{API_URL}/itens",
+
                 json={
 
                     "comanda_id":
-                    lista_comandas[comanda],
+                    lista_comandas[
+                        comanda
+                    ],
 
                     "produto_id":
-                    lista_produtos[produto],
+                    lista_produtos[
+                        produto
+                    ],
 
                     "quantidade":
                     quantidade
@@ -270,7 +314,7 @@ if len(comandas)>0 and len(produtos)>0:
             else:
 
                 st.error(
-                    f"Erro: {resposta.text}"
+                    resposta.text
                 )
 
     else:
